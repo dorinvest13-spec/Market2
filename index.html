@@ -460,7 +460,11 @@ async function aiText(prompt) {
     body: JSON.stringify({ prompt, kind: 'creative' })
   });
   const d = await r.json().catch(() => ({}));
-  if (!r.ok || d.error) throw new Error(d.error || 'HTTP ' + r.status);
+  if (!r.ok || d.error) {
+    let msg = d.error;
+    if (typeof msg === 'object') msg = msg.message || JSON.stringify(msg);
+    throw new Error(msg || 'HTTP ' + r.status);
+  }
   return d.text || '';
 }
 async function aiImage(prompt) {
@@ -471,7 +475,11 @@ async function aiImage(prompt) {
     body: JSON.stringify({ action: 'image', prompt })
   });
   const d = await r.json().catch(() => ({}));
-  if (!r.ok || !d.image) throw new Error(d.error || 'HTTP ' + r.status);
+  if (!r.ok || !d.image) {
+    let msg = d.error;
+    if (typeof msg === 'object') msg = msg.message || JSON.stringify(msg);
+    throw new Error(msg || 'HTTP ' + r.status);
+  }
   return d.image;
 }
 async function aiVision(prompt, base64Image) {
@@ -482,7 +490,11 @@ async function aiVision(prompt, base64Image) {
     body: JSON.stringify({ action: 'vision', prompt, image: base64Image })
   });
   const d = await r.json().catch(() => ({}));
-  if (!r.ok || d.error) throw new Error(d.error || 'HTTP ' + r.status);
+  if (!r.ok || d.error) {
+    let msg = d.error;
+    if (typeof msg === 'object') msg = msg.message || JSON.stringify(msg);
+    throw new Error(msg || 'HTTP ' + r.status);
+  }
   return d.text || '';
 }
 
