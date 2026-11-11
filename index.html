@@ -7,7 +7,8 @@
 <title>AI-Пост · Ozon</title>
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Playfair+Display:wght@600;800&family=Unbounded:wght@600;800&family=Caveat:wght@600;700&display=swap" rel="stylesheet">
 <style>
 :root { --bg:#04070a; --bg1:#0a1014; --ink:#e9f5ef; --muted:#7e8b94; --line:rgba(140,255,205,.15); --neon:#2bffa8; --vio:#8b5cff; --gold:#ffd166; --danger:#ff5c7a; --inp:rgba(3,9,11,.6); }
 * { margin:0; padding:0; box-sizing:border-box; }
@@ -21,8 +22,9 @@ button, input, select, textarea { font:inherit; color:inherit; }
 .tab { padding:8px 12px; border-radius:10px; border:1px solid var(--line); background:transparent; color:var(--muted); font-size:12px; font-weight:700; cursor:pointer; }
 .tab.on { color:var(--bg); background:linear-gradient(120deg,#3ee6c4,var(--neon)); border-color:transparent; }
 .card { border-radius:16px; margin-bottom:12px; background:rgba(14,22,26,.6); border:1px solid var(--line); padding:14px; }
-.tag { font-size:10px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); margin-bottom:10px; }
+.tag { font-size:10px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; }
 .tag b { color:var(--neon); }
+.tag button.clear { background:none; border:none; color:var(--danger); font-size:10px; cursor:pointer; text-transform:none; letter-spacing:0; }
 label { display:block; margin:10px 0 5px; font-size:11px; color:var(--muted); }
 input[type=text], input[type=password], textarea { width:100%; padding:11px; border-radius:10px; border:1px solid var(--line); background:var(--inp); font-size:14px; }
 input:focus, textarea:focus { outline:none; border-color:var(--neon); }
@@ -37,7 +39,8 @@ button:disabled { opacity:.5; cursor:progress; }
 .chip.on { color:var(--bg); background:linear-gradient(120deg,#3ee6c4,var(--neon)); border-color:transparent; }
 .upload { aspect-ratio:1; border-radius:12px; border:2px dashed var(--line); display:grid; place-items:center; background:var(--inp); cursor:pointer; position:relative; overflow:hidden; }
 .upload img { width:100%; height:100%; object-fit:contain; background:#000; }
-.upload .plus { font-size:36px; color:var(--muted); }
+.upload .plus { font-size:36px; color:var(--muted); text-align:center; line-height:1.2; }
+.upload .plus span { font-size:12px; display:block; margin-top:5px; }
 .upload .rm { position:absolute; top:6px; right:6px; width:28px; height:28px; border-radius:50%; border:none; background:rgba(0,0,0,.7); color:white; font-size:14px; cursor:pointer; }
 canvas { width:100%; aspect-ratio:1; border-radius:14px; display:block; background:#0a1014; touch-action:none; }
 .hint { margin-top:8px; padding:8px 10px; border-radius:8px; font-size:11px; color:var(--muted); background:rgba(43,255,168,.08); border-left:3px solid var(--neon); }
@@ -61,13 +64,19 @@ canvas { width:100%; aspect-ratio:1; border-radius:14px; display:block; backgrou
 
 <section id="tab-product">
   <div class="card">
-    <div class="tag"><b>01</b> фото товара</div>
+    <div class="tag"><b>01</b> фото товара <button class="clear" id="clearAll">Сбросить всё</button></div>
     <div class="upload" id="upload"><div class="plus">＋</div></div>
     <input type="file" id="file" accept="image/*" hidden>
-    <div class="hint">📷 Скриншот с Ozon или своё фото. Лучше на белом фоне.</div>
+    <div class="hint">📷 Скриншот с Ozon или своё фото.</div>
   </div>
   <div class="card">
-    <div class="tag"><b>02</b> что за товар</div>
+    <div class="tag"><b>02</b> данные товара</div>
+    <div class="row">
+      <input type="text" id="link" placeholder="Ссылка на Ozon" style="flex:2">
+      <button class="secondary" id="loadOzon" style="flex:1; margin-top:0">📥</button>
+    </div>
+    <button class="ghost" id="scanPhoto" style="margin-top:8px">🤖 Распознать скриншот</button>
+    
     <label>Название (до 26 симв.)</label>
     <input type="text" id="title" maxlength="26" placeholder="Кроссовки Nike Air">
     <div class="row">
@@ -82,8 +91,15 @@ canvas { width:100%; aspect-ratio:1; border-radius:14px; display:block; backgrou
       <button class="chip" data-b="Новинка">Новинка</button>
       <button class="chip" data-b="Акция">Акция</button>
     </div>
-    <label>Ссылка на Ozon</label>
-    <input type="text" id="link" placeholder="https://ozon.ru/t/...">
+  </div>
+  <div class="card">
+    <div class="tag"><b>03</b> твой стиль (референс)</div>
+    <div class="upload" id="uploadRef" style="aspect-ratio:16/9">
+      <div class="plus">＋<span>Загрузи пример карточки</span></div>
+    </div>
+    <input type="file" id="fileRef" accept="image/*" hidden>
+    <button class="secondary" id="genStyle">🪄 Взять стиль с карточки</button>
+    <div id="styleResult" style="font-size:12px; color:var(--muted); margin-top:10px; display:none; line-height:1.5;"></div>
   </div>
   <button class="primary" id="nextBtn">→ Дальше: карточка и пост</button>
 </section>
@@ -97,6 +113,7 @@ canvas { width:100%; aspect-ratio:1; border-radius:14px; display:block; backgrou
       <button class="chip" data-tp="minimal">Минимал</button>
       <button class="chip" data-tp="sale">Распродажа</button>
       <button class="chip" data-tp="premium">Премиум</button>
+      <button class="chip" data-tp="custom" style="display:none; border-color:var(--neon)">Мой стиль ✨</button>
     </div>
     <button class="secondary" id="genBg">🎨 Сгенерировать AI-фон</button>
     <button class="ghost" id="resetPos" style="display:none">↺ Сбросить позицию</button>
@@ -119,8 +136,8 @@ canvas { width:100%; aspect-ratio:1; border-radius:14px; display:block; backgrou
       <button class="chip" data-tn="fun">С юмором</button>
     </div>
     <button class="secondary" id="genText">✍️ Сгенерировать текст</button>
-    <label style="margin-top:10px">Текст поста (можно править)</label>
-    <textarea id="postText" rows="10" placeholder="Здесь появится сгенерированный текст. Можно править руками."></textarea>
+    <label style="margin-top:10px">Текст поста</label>
+    <textarea id="postText" rows="10" placeholder="Здесь появится сгенерированный текст."></textarea>
     <button class="primary" id="copyText">📋 Скопировать текст</button>
     <button class="ghost" id="shareAll">📤 Поделиться (текст + картинка)</button>
   </div>
@@ -135,17 +152,15 @@ canvas { width:100%; aspect-ratio:1; border-radius:14px; display:block; backgrou
     <input type="password" id="cfgTok" placeholder="токен из Cloudflare">
     <button class="primary" id="saveCfg">💾 Сохранить</button>
     <button class="ghost" id="testAi">🧪 Проверить AI</button>
-    <div class="hint">Без настройки AI приложение работает, но без генерации фона и текста. Всё остальное доступно.</div>
   </div>
 </section>
-
 </div>
 <div id="toast"></div>
 
 <script>
 const S = {
-  photo: null, title: '', price: '', oldPrice: '', badge: '', link: '',
-  template: 'promo', bg: null,
+  photo: null, refPhoto: null, title: '', price: '', oldPrice: '', badge: '', link: '',
+  template: 'promo', bg: null, customStyle: null, ozonDesc: '',
   scale: 1, ox: 0, oy: 0, rot: 0,
   platform: 'vk', tone: 'selling',
   cfg: { url: '', token: '' }
@@ -154,10 +169,10 @@ const S = {
 const LS = { cfg: 'aipost.cfg', state: 'aipost.state' };
 
 const TPL = {
-  promo:   { grad: ['#7c4dff', '#2bffa8'], headColor: '#ffffff', badgeColor: '#ffd166', priceColor: '#ffffff' },
-  minimal: { grad: ['#f5f7fa', '#e0e5eb'], headColor: '#111111', badgeColor: '#2bffa8', priceColor: '#111111' },
-  sale:    { grad: ['#ff3d5a', '#ff9f1c'], headColor: '#ffffff', badgeColor: '#ffffff', priceColor: '#ffffff' },
-  premium: { grad: ['#0a0a0a', '#1a1a2e'], headColor: '#ffd166', badgeColor: '#ffd166', priceColor: '#ffd166' }
+  promo:   { grad: ['#7c4dff', '#2bffa8'], headColor: '#ffffff', badgeColor: '#ffd166', font: 'Manrope' },
+  minimal: { grad: ['#f5f7fa', '#e0e5eb'], headColor: '#111111', badgeColor: '#2bffa8', font: 'Manrope' },
+  sale:    { grad: ['#ff3d5a', '#ff9f1c'], headColor: '#ffffff', badgeColor: '#ffffff', font: 'Manrope' },
+  premium: { grad: ['#0a0a0a', '#1a1a2e'], headColor: '#ffd166', badgeColor: '#ffd166', font: 'Manrope' }
 };
 
 const $ = s => document.querySelector(s);
@@ -189,6 +204,7 @@ function persist() {
       badge: S.badge, link: S.link, template: S.template,
       platform: S.platform, tone: S.tone,
       scale: S.scale, ox: S.ox, oy: S.oy, rot: S.rot,
+      customStyle: S.customStyle, ozonDesc: S.ozonDesc,
       postText: $('#postText').value || ''
     }));
   } catch {}
@@ -202,11 +218,18 @@ function restore() {
     S.badge = d.badge || ''; S.link = d.link || '';
     S.template = d.template || 'promo'; S.platform = d.platform || 'vk'; S.tone = d.tone || 'selling';
     S.scale = d.scale ?? 1; S.ox = d.ox ?? 0; S.oy = d.oy ?? 0; S.rot = d.rot ?? 0;
+    S.customStyle = d.customStyle || null; S.ozonDesc = d.ozonDesc || '';
+    
     if ($('#title')) $('#title').value = S.title;
     if ($('#price')) $('#price').value = S.price;
     if ($('#oldPrice')) $('#oldPrice').value = S.oldPrice;
     if ($('#link')) $('#link').value = S.link;
     if ($('#postText')) $('#postText').value = d.postText || '';
+    
+    if (S.customStyle) {
+      $('#templates [data-tp="custom"]').style.display = 'inline-block';
+      renderStyleResult(S.customStyle);
+    }
   } catch {}
 }
 
@@ -268,19 +291,40 @@ function roundRect(c, x, y, w, h, r) {
 }
 
 function renderCard(size) {
-  const t = TPL[S.template];
+  let bg1, bg2, headColor, badgeColor, fontFamily;
+  
+  if (S.template === 'custom' && S.customStyle) {
+    bg1 = S.customStyle.bgColor || '#222';
+    bg2 = S.customStyle.bgColor || '#222';
+    headColor = S.customStyle.textColor || '#fff';
+    badgeColor = S.customStyle.accentColor || '#ffd166';
+    
+    const f = S.customStyle.fontStyle || 'sans-serif';
+    if (f === 'serif') fontFamily = "'Playfair Display', serif";
+    else if (f === 'display') fontFamily = "'Unbounded', sans-serif";
+    else if (f === 'handwritten') fontFamily = "'Caveat', cursive";
+    else fontFamily = 'Manrope, sans-serif';
+  } else {
+    const t = TPL[S.template] || TPL.promo;
+    bg1 = t.grad[0]; bg2 = t.grad[1];
+    headColor = t.headColor; badgeColor = t.badgeColor;
+    fontFamily = 'Manrope, sans-serif';
+  }
+
   ctx.clearRect(0, 0, size, size);
+  
   if (S.bg) {
     const sc = Math.max(size / S.bg.width, size / S.bg.height);
     const dw = S.bg.width * sc, dh = S.bg.height * sc;
     ctx.drawImage(S.bg, (size - dw) / 2, (size - dh) / 2, dw, dh);
   } else {
     const g = ctx.createLinearGradient(0, 0, size, size);
-    g.addColorStop(0, t.grad[0]);
-    g.addColorStop(1, t.grad[1]);
+    g.addColorStop(0, bg1);
+    g.addColorStop(1, bg2);
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, size, size);
   }
+
   const k = size / 1080;
   if (S.photo) {
     if (S.photo._wb === undefined) S.photo._wb = isWhiteBg(S.photo);
@@ -289,6 +333,7 @@ function renderCard(size) {
     const x = (size - s) / 2 + S.ox * k;
     const y = (size - s) / 2 + S.oy * k;
     const r = (S.rot * Math.PI) / 180;
+    
     if (wb) {
       ctx.save();
       ctx.translate(x + s / 2, y + s * 0.94);
@@ -321,24 +366,26 @@ function renderCard(size) {
     ctx.restore();
     ctx.restore();
   }
+
   ctx.fillStyle = 'rgba(0,0,0,.6)';
   roundRect(ctx, 40 * k, size - 280 * k, size - 80 * k, 240 * k, 30 * k);
   ctx.fill();
+
   if (S.title) {
-    ctx.fillStyle = t.headColor;
-    ctx.font = `800 ${56 * k}px Manrope, sans-serif`;
+    ctx.fillStyle = headColor;
+    ctx.font = `800 ${56 * k}px ${fontFamily}`;
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
     ctx.fillText(S.title.slice(0, 26), 80 * k, size - 200 * k);
   }
   if (S.price) {
-    ctx.fillStyle = t.priceColor;
-    ctx.font = `800 ${68 * k}px Manrope, sans-serif`;
+    ctx.fillStyle = headColor;
+    ctx.font = `800 ${68 * k}px ${fontFamily}`;
     ctx.fillText(S.price + ' ₽', 80 * k, size - 105 * k);
     if (S.oldPrice) {
       const priceW = ctx.measureText(S.price + ' ₽').width;
       ctx.fillStyle = 'rgba(255,255,255,.45)';
-      ctx.font = `600 ${38 * k}px Manrope, sans-serif`;
+      ctx.font = `600 ${38 * k}px ${fontFamily}`;
       ctx.fillText(S.oldPrice + ' ₽', 80 * k + priceW + 30 * k, size - 105 * k);
       const ow = ctx.measureText(S.oldPrice + ' ₽').width;
       ctx.strokeStyle = 'rgba(255,255,255,.45)';
@@ -349,13 +396,14 @@ function renderCard(size) {
       ctx.stroke();
     }
   }
+  
   if (S.badge) {
-    ctx.fillStyle = t.badgeColor;
+    ctx.fillStyle = badgeColor;
     ctx.beginPath();
     ctx.arc(size - 130 * k, 130 * k, 90 * k, 0, Math.PI * 2);
     ctx.fill();
     ctx.fillStyle = '#111';
-    ctx.font = `800 ${44 * k}px Manrope, sans-serif`;
+    ctx.font = `800 ${44 * k}px ${fontFamily}`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(S.badge.slice(0, 8), size - 130 * k, 132 * k);
@@ -426,30 +474,95 @@ async function aiImage(prompt) {
   if (!r.ok || !d.image) throw new Error(d.error || 'HTTP ' + r.status);
   return d.image;
 }
-
-const PLATFORM_PROMPTS = {
-  vk: 'ВКонтакте. До 1500 символов. Живой дружеский тон. Эмодзи умеренно. 2-3 хештега в конце. Призыв к действию.',
-  tg: 'Telegram. До 1000 символов. Яркий хук в первой строке. Список преимуществ. 3-4 хештега. Призыв.',
-  dzen: 'Яндекс Дзен. 1500-2500 символов. Экспертный тон, подзаголовки. Без эмодзи. Без хештегов. Плавный финал с призывом подписаться.',
-  ok: 'Одноклассники. До 1200 символов. Тёплый тон, обращение к аудитории, вопрос в конце. Эмодзи умеренно. 2 хештега.'
-};
-const TONE_PROMPTS = {
-  selling: 'продающий: акцент на выгоде, срочности. Подчёркивай скидку.',
-  info: 'информативный: спокойно расскажи о товаре, характеристиках, кому подойдёт.',
-  fun: 'с лёгким юмором: дружеский, живой.'
-};
-function buildPostPrompt() {
-  return [
-    'Ты — копирайтер. Напиши готовый пост для соцсетей. Без вступлений и пояснений — только готовый текст.',
-    'ПЛОЩАДКА: ' + PLATFORM_PROMPTS[S.platform],
-    'ТОН: ' + TONE_PROMPTS[S.tone],
-    'ТОВАР: ' + (S.title || 'без названия'),
-    'ЦЕНА: ' + (S.price ? S.price + ' ₽' : 'не указана') + (S.oldPrice ? ' (было ' + S.oldPrice + ' ₽)' : ''),
-    S.badge ? 'БЕЙДЖ: ' + S.badge : '',
-    S.link ? 'ССЫЛКА: ' + S.link + ' (упомяни как «купить по ссылке»)' : '',
-    'Верни только текст поста на русском.'
-  ].filter(Boolean).join('\n');
+async function aiVision(prompt, base64Image) {
+  if (!S.cfg.url || !S.cfg.token) throw new Error('AI не настроен → ⚙');
+  const r = await fetch(S.cfg.url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-app-token': S.cfg.token },
+    body: JSON.stringify({ action: 'vision', prompt, image: base64Image })
+  });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok || d.error) throw new Error(d.error || 'HTTP ' + r.status);
+  return d.text || '';
 }
+
+const uploadRef = $('#uploadRef');
+const fileRef = $('#fileRef');
+uploadRef.onclick = () => fileRef.click();
+fileRef.onchange = async e => {
+  const f = e.target.files?.[0];
+  if (!f) return;
+  try {
+    const dataUrl = await compress(f, 800);
+    S.refPhoto = dataUrl;
+    uploadRef.innerHTML = '';
+    const img = document.createElement('img');
+    img.src = dataUrl;
+    uploadRef.appendChild(img);
+    const rm = document.createElement('button');
+    rm.className = 'rm';
+    rm.textContent = '✕';
+    rm.onclick = ev => {
+      ev.stopPropagation();
+      S.refPhoto = null;
+      uploadRef.innerHTML = '<div class="plus">＋<span>Загрузи пример карточки</span></div>';
+    };
+    uploadRef.appendChild(rm);
+  } catch (err) {
+    toast('Не загрузилось: ' + err.message, 'err');
+  }
+  fileRef.value = '';
+};
+
+function renderStyleResult(style) {
+  if (!style) return;
+  $('#styleResult').style.display = 'block';
+  $('#styleResult').innerHTML = `
+    <b>Стиль распознан:</b><br>
+    Фон: <span style="color:${style.bgColor || '#000'}">⬤</span> ${style.bgColor || '—'}<br>
+    Текст: <span style="color:${style.textColor || '#000'}">⬤</span> ${style.textColor || '—'}<br>
+    Акцент: <span style="color:${style.accentColor || '#000'}">⬤</span> ${style.accentColor || '—'}<br>
+    Шрифт: <b>${style.fontStyle || '—'}</b>
+  `;
+  $('#templates [data-tp="custom"]').style.display = 'inline-block';
+}
+
+$('#genStyle').onclick = async () => {
+  if (!S.refPhoto) return toast('Загрузи карточку-пример', 'warn');
+  const btn = $('#genStyle');
+  btn.disabled = true;
+  btn.textContent = '🪄 Анализирую…';
+  
+  const prompt = `Проанализируй дизайн этой карточки товара. Верни СТРОГО JSON без markdown:
+  {
+    "bgColor": "hex-код цвета фона",
+    "textColor": "hex-код цвета текста",
+    "accentColor": "hex-код цвета акцентов",
+    "fontStyle": "sans-serif" | "serif" | "display" | "handwritten"
+  }`;
+  
+  try {
+    const res = await aiVision(prompt, S.refPhoto);
+    const match = res.match(/\{[\s\S]*\}/);
+    if (!match) throw new Error('Не удалось распознать JSON');
+    const style = JSON.parse(match[0]);
+    
+    S.customStyle = style;
+    S.template = 'custom';
+    
+    renderStyleResult(style);
+    $$('#templates .chip').forEach(x => x.classList.toggle('on', x.dataset.tp === 'custom'));
+    
+    switchTab('result');
+    renderCard(1080);
+    persist();
+    toast('Стиль применён 🪄');
+  } catch (e) {
+    toast('Ошибка: ' + e.message, 'err', 4000);
+  }
+  btn.disabled = false;
+  btn.textContent = '🪄 Взять стиль с карточки';
+};
 
 const upload = $('#upload');
 const file = $('#file');
@@ -500,6 +613,85 @@ $('#badges').onclick = e => {
   persist();
 };
 
+$('#clearAll').onclick = () => {
+  if (!confirm('Очистить все поля и фото?')) return;
+  localStorage.removeItem(LS.state);
+  location.reload();
+};
+
+$('#loadOzon').onclick = async () => {
+  const url = $('#link').value.trim();
+  if (!url) return toast('Вставь ссылку на Ozon', 'warn');
+  const btn = $('#loadOzon');
+  btn.disabled = true;
+  btn.textContent = '⏳';
+  try {
+    const r = await fetch(S.cfg.url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-app-token': S.cfg.token },
+      body: JSON.stringify({ action: 'ozon', url })
+    });
+    const d = await r.json();
+    if (!r.ok || d.error) throw new Error(d.error || 'API error');
+    
+    if (d.title) { $('#title').value = d.title.slice(0, 26); S.title = $('#title').value; }
+    if (d.price) { $('#price').value = d.price; S.price = d.price; }
+    if (d.oldPrice) { $('#oldPrice').value = d.oldPrice; S.oldPrice = d.oldPrice; }
+    if (d.description) S.ozonDesc = d.description;
+    
+    if (d.images && d.images[0]) {
+      try {
+        const im = await loadImage(d.images[0]);
+        S.photo = im;
+        renderUploadPreview(d.images[0]);
+      } catch (e) { console.warn('img load fail'); }
+    }
+    renderCard(1080);
+    persist();
+    toast('Данные загружены ✅');
+  } catch (e) {
+    toast('Ошибка: ' + e.message, 'err', 4000);
+  }
+  btn.disabled = false;
+  btn.textContent = '📥';
+};
+
+$('#scanPhoto').onclick = async () => {
+  if (!S.photo) return toast('Сначала загрузи фото товара', 'warn');
+  const btn = $('#scanPhoto');
+  btn.disabled = true;
+  btn.textContent = '🤖 Анализирую…';
+  
+  const c = document.createElement('canvas');
+  c.width = S.photo.width;
+  c.height = S.photo.height;
+  c.getContext('2d').drawImage(S.photo, 0, 0);
+  const base64 = c.toDataURL('image/jpeg', 0.8);
+  
+  const prompt = `Вытащи данные с карточки Ozon. Верни СТРОГО JSON:
+  {"title":"название (до 26 симв)","price":"цена числом","oldPrice":"старая цена","description":"краткое описание"}`;
+  
+  try {
+    const res = await aiVision(prompt, base64);
+    const match = res.match(/\{[\s\S]*\}/);
+    if (!match) throw new Error('Не удалось распознать');
+    const data = JSON.parse(match[0]);
+    
+    if (data.title) { $('#title').value = data.title.slice(0, 26); S.title = $('#title').value; }
+    if (data.price) { $('#price').value = data.price; S.price = data.price; }
+    if (data.oldPrice) { $('#oldPrice').value = data.oldPrice; S.oldPrice = data.oldPrice; }
+    if (data.description) S.ozonDesc = data.description;
+    
+    renderCard(1080);
+    persist();
+    toast('Распознано ✅');
+  } catch (e) {
+    toast('Ошибка: ' + e.message, 'err', 4000);
+  }
+  btn.disabled = false;
+  btn.textContent = '🤖 Распознать скриншот';
+};
+
 $('#nextBtn').onclick = () => { switchTab('result'); renderCard(1080); };
 
 $('#templates').onclick = e => {
@@ -523,7 +715,8 @@ $('#genBg').onclick = async () => {
   btn.disabled = true;
   btn.textContent = '🎨 Рисую…';
   try {
-    const prompt = 'пустой фон для карточки товара, ' + TPL[S.template].grad.join(' и ') + ' цвета, стильно, без предметов, 4k';
+    const t = TPL[S.template] || TPL.promo;
+    const prompt = 'пустой фон для карточки товара, ' + t.grad.join(' и ') + ' цвета, стильно, без предметов, 4k';
     const url = await aiImage(prompt);
     const im = await loadImage(url);
     S.bg = im;
@@ -544,6 +737,31 @@ $('#dlCard').onclick = () => {
   a.click();
   toast('Скачано 💾');
 };
+
+const PLATFORM_PROMPTS = {
+  vk: 'ВКонтакте. До 1500 символов. Живой дружеский тон. Эмодзи умеренно. 2-3 хештега в конце. Призыв к действию.',
+  tg: 'Telegram. До 1000 символов. Яркий хук в первой строке. Список преимуществ. 3-4 хештега. Призыв.',
+  dzen: 'Яндекс Дзен. 1500-2500 символов. Экспертный тон, подзаголовки. Без эмодзи. Без хештегов.',
+  ok: 'Одноклассники. До 1200 символов. Тёплый тон, обращение к аудитории, вопрос в конце. 2 хештега.'
+};
+const TONE_PROMPTS = {
+  selling: 'продающий: акцент на выгоде, срочности. Подчёркивай скидку.',
+  info: 'информативный: спокойно расскажи о товаре, характеристиках.',
+  fun: 'с лёгким юмором: дружеский, живой.'
+};
+function buildPostPrompt() {
+  return [
+    'Ты — копирайтер. Напиши готовый пост для соцсетей. Без вступлений и пояснений — только готовый текст.',
+    'ПЛОЩАДКА: ' + PLATFORM_PROMPTS[S.platform],
+    'ТОН: ' + TONE_PROMPTS[S.tone],
+    'ТОВАР: ' + (S.title || 'без названия'),
+    'ЦЕНА: ' + (S.price ? S.price + ' ₽' : 'не указана') + (S.oldPrice ? ' (было ' + S.oldPrice + ' ₽)' : ''),
+    S.badge ? 'БЕЙДЖ: ' + S.badge : '',
+    S.link ? 'ССЫЛКА: ' + S.link + ' (упомяни как «купить по ссылке»)' : '',
+    S.ozonDesc ? 'ОПИСАНИЕ: ' + S.ozonDesc : '',
+    'Верни только текст поста на русском.'
+  ].filter(Boolean).join('\n');
+}
 
 $('#platforms').onclick = e => {
   const b = e.target.closest('[data-p]');
@@ -627,6 +845,10 @@ function switchTab(name) {
 loadCfg();
 restore();
 renderCard(1080);
+
+if (document.fonts) {
+  document.fonts.ready.then(() => renderCard(1080));
+}
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
