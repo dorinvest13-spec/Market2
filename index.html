@@ -735,7 +735,7 @@ $('#genBg').onclick = async () => {
     renderCard(1080);
     toast('Фон готов 🎨');
   } catch (e) {
-    toast('AI: ' + e.message, 'err');
+    toast('AI: ' + e.message, 'err', 5000);
   }
   btn.disabled = false;
   btn.textContent = '🎨 Сгенерировать AI-фон';
